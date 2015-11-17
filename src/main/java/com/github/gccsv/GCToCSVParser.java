@@ -47,7 +47,7 @@ public class GCToCSVParser extends DefaultParser {
 					try {
 						GC_FIELD.valueOf(mappingField);
 					} catch (IllegalArgumentException e) {
-						throw new ParseException(mappingField + " is not a valid google calendar field. Check help for valid options.");
+						throw new ParseException(mappingField + " is not a valid google contacts field. Check help for valid options.");
 					}
 
 				}

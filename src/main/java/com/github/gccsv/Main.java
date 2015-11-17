@@ -4,6 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JTable.PrintMode;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -15,6 +17,7 @@ import org.apache.commons.cli.ParseException;
 import com.github.gccsv.output.CSVWriter;
 import com.github.gccsv.output.CVSWriterException;
 import com.google.gdata.data.contacts.ContactEntry;
+import com.google.gdata.util.NotImplementedException;
 
 public class Main {
 	private CommandLine commandLine;
@@ -66,8 +69,17 @@ public class Main {
 		return buffer.toString();
 	}
 
+	private static void printHelp(Options options) {
+		HelpFormatter formatter = new HelpFormatter();
+		formatter.setOptionComparator(null);
+		formatter.setWidth(100);
+		formatter.printHelp(" ", options, true);
+	}
+
 	private static CommandLine parseOptions(String[] args) {
 		Options options = new Options();
+
+		options.addOption(Option.builder("h").optionalArg(true).longOpt("help").desc("Prints this message and exits").build());
 
 		OptionGroup clientId = new OptionGroup();
 		clientId.setRequired(true);
@@ -84,8 +96,8 @@ public class Main {
 		options.addOptionGroup(clientSecret);
 
 		options.addOption(Option.builder().optionalArg(true).longOpt("page-size")
-				.desc(String.format("The page size for the Google Contacts request (default is %d)", DEFAULT_PAGE_SIZE)).hasArg()
-				.argName("size").type(Integer.class).build());
+				.desc(String.format("The page size for the Google Contacts request (default is %d)", DEFAULT_PAGE_SIZE)).hasArg().argName("size")
+				.type(Integer.class).build());
 		options.addOption(Option.builder().optionalArg(true).longOpt("max-results")
 				.desc(String.format("The maximum number of contacts to fetch from Google Contacts (default is %d)",
 
@@ -96,7 +108,8 @@ public class Main {
 		options.addOption(Option.builder().longOpt("email").desc("The email to filter the contacts with (requires group-id)").hasArg()
 				.argName("email").build());
 
-		options.addOption(Option.builder("f").longOpt("output-file").desc("The file to write the CSV output to. If not set, no file will be written.").hasArg().argName("path").build());
+		options.addOption(Option.builder("f").longOpt("output-file")
+				.desc("The file to write the CSV output to. If not set, no file will be written.").hasArg().argName("path").build());
 		options.addOption(Option.builder("p").longOpt("print").desc("Whether to print the output").build());
 		options.addOption(Option.builder().longOpt("deaccent").desc("Replace diacritics into plain ASCII counterparts").build());
 
@@ -114,7 +127,8 @@ public class Main {
 								defaultMappingAsString(), gcFieldsAsString())).hasArgs().argName("mapping").build());
 
 		options.addOption(Option.builder("d").optionalArg(true).longOpt("storage-dir")
-				.desc("The directory to keep the OAuth V2refresh token in. It is recommended to use a full path with leading and trailing slash").required().hasArg().argName("path").build());
+				.desc("The directory to keep the OAuth V2refresh token in. It is recommended to use a full path with leading and trailing slash")
+				.required().hasArg().argName("path").build());
 
 		options.addOption(Option.builder("v").optionalArg(true).longOpt("verbose")
 				.desc("Verbose mode. Includes java stack traces if an exception occurs").build());
@@ -125,20 +139,22 @@ public class Main {
 			commandLine = parser.parse(options, args);
 		} catch (ParseException e) {
 			System.err.println(e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.setOptionComparator(null);
-			formatter.setWidth(100);
-			formatter.printHelp(" ", options,true);
+			printHelp(options);
 		}
 
+		if (commandLine.hasOption("h")) {
+			printHelp(options);
+			System.exit(0);
+		}
 		return commandLine;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws NotImplementedException {
 		CommandLine commandLine = Main.parseOptions(args);
 		if (commandLine == null) {
 			System.exit(1);
 		}
+
 		Main main = new Main(commandLine);
 		try {
 			main.execute();
@@ -153,7 +169,7 @@ public class Main {
 		System.exit(0);
 	}
 
-	private void execute() throws GoogleConnectorException, CVSWriterException {
+	private void execute() throws GoogleConnectorException, CVSWriterException, NotImplementedException {
 		boolean verbose = false;
 		if (commandLine.hasOption("v")) {
 			verbose = true;
@@ -169,11 +185,16 @@ public class Main {
 			clientSecret = commandLine.getOptionValue("S");
 		}
 
+		if (commandLine.hasOption("c") || commandLine.hasOption("s")) {
+			throw new NotImplementedException(
+					"Reading client id and secret from file is not implemented. Use 'C' and 'S' to read it from the command line instead");
+		}
+
 		if (clientId != null && clientSecret != null) {
 			int pageSize = commandLine.hasOption("page-size") ? new Integer(commandLine.getOptionValue("page-size")) : DEFAULT_PAGE_SIZE;
 			int maxResults = commandLine.hasOption("max-results") ? new Integer(commandLine.getOptionValue("max-results")) : DEFAULT_MAX_RESULTS;
 
-			GCConnector connector = new GCConnector(clientId, clientSecret, pageSize, maxResults,commandLine.getOptionValue("d"));
+			GCConnector connector = new GCConnector(clientId, clientSecret, pageSize, maxResults, commandLine.getOptionValue("d"));
 			connector.setVerbose(verbose);
 			if (commandLine.hasOption("group-id") && commandLine.hasOption("email")) {
 				connector.setGroupId(commandLine.getOptionValue("group-id"));
