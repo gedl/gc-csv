@@ -11,6 +11,7 @@ public class GCToCSVParser extends DefaultParser {
 	@Override
 	public CommandLine parse(Options options, String[] arguments, Properties properties, boolean stopAtNonOption) throws ParseException {
 		CommandLine commandLine = super.parse(options, arguments, properties, stopAtNonOption);
+
 		this.checkCombinations(commandLine);
 
 		return commandLine;

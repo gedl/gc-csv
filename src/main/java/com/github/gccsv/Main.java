@@ -1,10 +1,15 @@
 package com.github.gccsv;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.swing.JTable.PrintMode;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -16,6 +21,9 @@ import org.apache.commons.cli.ParseException;
 
 import com.github.gccsv.output.CSVWriter;
 import com.github.gccsv.output.CVSWriterException;
+import com.github.gccsv.output.IncomICW1000GConnector;
+import com.github.gccsv.output.IncomICW1000GConnectorException;
+import com.google.gdata.client.uploader.FileUploadData;
 import com.google.gdata.data.contacts.ContactEntry;
 import com.google.gdata.util.NotImplementedException;
 
@@ -110,6 +118,8 @@ public class Main {
 
 		options.addOption(Option.builder("f").longOpt("output-file")
 				.desc("The file to write the CSV output to. If not set, no file will be written.").hasArg().argName("path").build());
+		options.addOption(Option.builder().longOpt("icw1000").desc("Send the results to a ICW1000G (VOIP Phone)").hasArg()
+				.argName("password@ip:port").build());
 		options.addOption(Option.builder("p").longOpt("print").desc("Whether to print the output").build());
 		options.addOption(Option.builder().longOpt("deaccent").desc("Replace diacritics into plain ASCII counterparts").build());
 
@@ -158,18 +168,19 @@ public class Main {
 		Main main = new Main(commandLine);
 		try {
 			main.execute();
-		} catch (GoogleConnectorException | CVSWriterException e) {
+		} catch (GoogleConnectorException | CVSWriterException | IncomICW1000GConnectorException | GCCSVException e) {
 			if (commandLine.hasOption("v")) {
 				e.printStackTrace();
 			}
-			System.err.println(String.format("Finished unsucessfully. Cause: %s. Use -v for more details.", e.getMessage()));
+			System.err.println(String.format("Finished unsucessfully. Cause: %s.%s", e.getMessage(), commandLine.hasOption("v") ? ""
+					: " Use -v for more details."));
 			System.exit(2);
 		}
 		System.out.println("\n\nDone.");
 		System.exit(0);
 	}
 
-	private void execute() throws GoogleConnectorException, CVSWriterException, NotImplementedException {
+	private void execute() throws GoogleConnectorException, CVSWriterException, IncomICW1000GConnectorException, GCCSVException {
 		boolean verbose = false;
 		if (commandLine.hasOption("v")) {
 			verbose = true;
@@ -185,9 +196,22 @@ public class Main {
 			clientSecret = commandLine.getOptionValue("S");
 		}
 
-		if (commandLine.hasOption("c") || commandLine.hasOption("s")) {
-			throw new NotImplementedException(
-					"Reading client id and secret from file is not implemented. Use 'C' and 'S' to read it from the command line instead");
+		if (commandLine.hasOption("c")) {
+			try {
+				List<String> lines = Files.readAllLines(Paths.get(commandLine.getOptionValue("c")));
+				clientId = lines.get(0);
+			} catch (IOException | IndexOutOfBoundsException e) {
+				throw new GCCSVException("Invalid file for client id: " + commandLine.getOptionValue("c"), e);
+			}
+		}
+
+		if (commandLine.hasOption("s")) {
+			try {
+				List<String> lines = Files.readAllLines(Paths.get(commandLine.getOptionValue("s")));
+				clientSecret = lines.get(0);
+			} catch (IOException | IndexOutOfBoundsException e) {
+				throw new GCCSVException("Invalid file for client secret: " + commandLine.getOptionValue("s"), e);
+			}
 		}
 
 		if (clientId != null && clientSecret != null) {
@@ -231,6 +255,15 @@ public class Main {
 				System.out.printf("\n-----\nResult:\n");
 				writer.write(contacts, System.out);
 			}
+
+			if (commandLine.hasOption("icw1000")) {
+				IncomICW1000GConnector connector = new IncomICW1000GConnector(commandLine.getOptionValue("icw1000"));
+				connector.setVerbose(verbose);
+				OutputStream s = connector.getOutputStream();
+				writer.write(contacts, s);
+				connector.sendFile();
+			}
+
 		}
 	}
 }

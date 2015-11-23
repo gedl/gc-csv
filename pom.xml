@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gc-csv</groupId>
 	<artifactId>gc-csv</artifactId>
-	<version>0.0.5-SNAPSHOT</version>
+	<version>0.0.4-SNAPSHOT</version>
 	<name>GS-CSV</name>
 	<description>Command line utility to export Google Calendar contacts to a Comma Separated File</description>
 

@@ -119,6 +119,9 @@ public class GCConnector {
 			PrintWriter fileWriter = null;
 			try {
 				refreshTokenStore.createNewFile();
+				refreshTokenStore.setExecutable(false, false);
+				refreshTokenStore.setWritable(true, true);
+				refreshTokenStore.setReadable(true, true);
 				fileWriter = new PrintWriter(refreshTokenStore);
 				fileWriter.print(refreshToken);
 			} catch (IOException e) {
@@ -202,10 +205,16 @@ public class GCConnector {
 
 		String version = "3.0";
 
+		String groupId = "1c184da088ee926";
+		String email = "sestrela.gluiz@gmail.com";
+		
 		Query myQuery = new Query(feedUrl);
 		myQuery.setMaxResults(querySize);
 		myQuery.setStartIndex(startIndex);
 		myQuery.addCustomParameter(new CustomParameter("v", version));
+		 myQuery.addCustomParameter(new CustomParameter("group",
+				 "http://www.google.com/m8/feeds/groups/" + email + "/base/" +
+				 groupId));
 		if ((email != null && email.length() != 0) && (groupId != null && groupId.length() != 0)) {
 			myQuery.addCustomParameter(new CustomParameter("group", String.format(groupIdTemplate, email, groupId)));
 		}
