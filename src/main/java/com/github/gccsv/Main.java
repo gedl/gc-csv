@@ -152,7 +152,7 @@ public class Main {
 			printHelp(options);
 		}
 
-		if (commandLine.hasOption("h")) {
+		if (commandLine!= null && commandLine.hasOption("h")) {
 			printHelp(options);
 			System.exit(0);
 		}
