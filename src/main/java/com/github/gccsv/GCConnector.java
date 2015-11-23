@@ -120,6 +120,8 @@ public class GCConnector {
 			try {
 				refreshTokenStore.createNewFile();
 				refreshTokenStore.setExecutable(false, false);
+				refreshTokenStore.setWritable(false, false);
+				refreshTokenStore.setReadable(false, false);
 				refreshTokenStore.setWritable(true, true);
 				refreshTokenStore.setReadable(true, true);
 				fileWriter = new PrintWriter(refreshTokenStore);
