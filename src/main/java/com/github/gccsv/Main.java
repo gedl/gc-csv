@@ -1,8 +1,5 @@
 package com.github.gccsv;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -23,7 +20,6 @@ import com.github.gccsv.output.CSVWriter;
 import com.github.gccsv.output.CVSWriterException;
 import com.github.gccsv.output.IncomICW1000GConnector;
 import com.github.gccsv.output.IncomICW1000GConnectorException;
-import com.google.gdata.client.uploader.FileUploadData;
 import com.google.gdata.data.contacts.ContactEntry;
 import com.google.gdata.util.NotImplementedException;
 

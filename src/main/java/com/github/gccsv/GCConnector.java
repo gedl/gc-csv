@@ -205,9 +205,6 @@ public class GCConnector {
 
 		String version = "3.0";
 
-		String groupId = "1c184da088ee926";
-		String email = "sestrela.gluiz@gmail.com";
-		
 		Query myQuery = new Query(feedUrl);
 		myQuery.setMaxResults(querySize);
 		myQuery.setStartIndex(startIndex);
