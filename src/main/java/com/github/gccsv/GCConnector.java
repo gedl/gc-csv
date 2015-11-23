@@ -209,9 +209,9 @@ public class GCConnector {
 		myQuery.setMaxResults(querySize);
 		myQuery.setStartIndex(startIndex);
 		myQuery.addCustomParameter(new CustomParameter("v", version));
-		 myQuery.addCustomParameter(new CustomParameter("group",
-				 "http://www.google.com/m8/feeds/groups/" + email + "/base/" +
-				 groupId));
+		if (email != null && groupId != null) {
+			myQuery.addCustomParameter(new CustomParameter("group", "http://www.google.com/m8/feeds/groups/" + email + "/base/" + groupId));
+		}
 		if ((email != null && email.length() != 0) && (groupId != null && groupId.length() != 0)) {
 			myQuery.addCustomParameter(new CustomParameter("group", String.format(groupIdTemplate, email, groupId)));
 		}
