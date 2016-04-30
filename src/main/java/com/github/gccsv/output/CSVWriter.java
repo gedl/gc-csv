@@ -1,5 +1,10 @@
 package com.github.gccsv.output;
 
+import com.github.gccsv.GC_FIELD;
+import com.google.gdata.data.contacts.ContactEntry;
+import com.google.gdata.data.extensions.PostalAddress;
+import com.google.gdata.data.extensions.StructuredPostalAddress;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,9 +16,6 @@ import java.text.Normalizer;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import com.github.gccsv.GC_FIELD;
-import com.google.gdata.data.contacts.ContactEntry;
 
 public class CSVWriter {
 
@@ -122,24 +124,56 @@ public class CSVWriter {
 		String result = "";
 
 		switch (source) {
-		case NAME:
-			String title = entry.getTitle().getPlainText();
-			result = deaccent ? deAccent(title) : title;
-			break;
-		case PHONE_NUMBER:
-			if (numberIndex < entry.getPhoneNumbers().size()) {
-				result = entry.getPhoneNumbers().get(numberIndex).getPhoneNumber();
-			}
-			numberIndex++;
-			break;
-		case EMAIL:
-			if (emailIndex < entry.getEmailAddresses().size()) {
-				result = entry.getEmailAddresses().get(emailIndex).getAddress();
-			}
-			emailIndex++;
-			break;
-		case NONE:
-			break;
+			case NAME:
+				String title = entry.getTitle().getPlainText();
+				result = deaccent ? deAccent(title) : title;
+				break;
+			case PHONE_NUMBER:
+				if (numberIndex < entry.getPhoneNumbers().size()) {
+					result = entry.getPhoneNumbers().get(numberIndex).getPhoneNumber();
+				}
+				numberIndex++;
+				break;
+			case EMAIL:
+				if (emailIndex < entry.getEmailAddresses().size()) {
+					result = entry.getEmailAddresses().get(emailIndex).getAddress();
+				}
+				emailIndex++;
+				break;
+			case ADDRESS:
+				PostalAddress primary = null;
+				StructuredPostalAddress primaryStructured = null;
+
+				for (PostalAddress address : entry.getPostalAddresses()) {
+					if (primary == null) {
+						primary = address;
+					}
+					if (address.getPrimary()) {
+						primary = address;
+					}
+				}
+				if (primary == null) {
+					for (StructuredPostalAddress address : entry.getStructuredPostalAddresses()) {
+						if (primaryStructured == null) {
+							primaryStructured = address;
+						}
+						if (primaryStructured.getPrimary()) {
+							primaryStructured = address;
+						}
+					}
+				}
+
+
+				if (primary != null) {
+					result = primary.getValue();
+				}
+				if (primaryStructured != null) {
+					result = primaryStructured.getFormattedAddress().getValue();
+				}
+
+				break;
+			case NONE:
+				break;
 		}
 
 		return result;
