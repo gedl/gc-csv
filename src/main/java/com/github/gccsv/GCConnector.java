@@ -1,18 +1,5 @@
 package com.github.gccsv;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
-
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
@@ -28,6 +15,19 @@ import com.google.gdata.client.contacts.ContactsService;
 import com.google.gdata.data.contacts.ContactEntry;
 import com.google.gdata.data.contacts.ContactFeed;
 import com.google.gdata.util.ServiceException;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
 
 public class GCConnector {
 
@@ -221,7 +221,12 @@ public class GCConnector {
 		ContactFeed queryFeed;
 		try {
 			queryFeed = contactsService.query(myQuery, ContactFeed.class);
-		} catch (IOException | ServiceException e) {
+		} catch (IOException e) {
+			if (verbose) {
+				System.err.println("Could not query google. Cause: " + e.getMessage());
+			}
+			throw new GoogleConnectorException("Could not query google", e);
+		} catch (ServiceException e) {
 			if (verbose) {
 				System.err.println("Could not query google. Cause: " + e.getMessage());
 			}
@@ -234,7 +239,7 @@ public class GCConnector {
 
 	public List<ContactEntry> readContacts() throws GoogleConnectorException {
 		this.ensureAccessKey();
-		List<ContactEntry> entries = new ArrayList<>();
+		List<ContactEntry> entries = new ArrayList<ContactEntry>();
 		int contactsSoFar = 0;
 		int totalContacts = 0;
 

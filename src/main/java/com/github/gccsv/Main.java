@@ -1,13 +1,11 @@
 package com.github.gccsv;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.github.gccsv.output.CSVWriter;
+import com.github.gccsv.output.CVSWriterException;
+import com.github.gccsv.output.IncomICW1000GConnector;
+import com.github.gccsv.output.IncomICW1000GConnectorException;
+import com.google.gdata.data.contacts.ContactEntry;
+import com.google.gdata.util.NotImplementedException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -16,12 +14,13 @@ import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import com.github.gccsv.output.CSVWriter;
-import com.github.gccsv.output.CVSWriterException;
-import com.github.gccsv.output.IncomICW1000GConnector;
-import com.github.gccsv.output.IncomICW1000GConnectorException;
-import com.google.gdata.data.contacts.ContactEntry;
-import com.google.gdata.util.NotImplementedException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Main {
 	private CommandLine commandLine;
@@ -35,7 +34,7 @@ public class Main {
 	private static int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE;
 
 	static {
-		DEFAULT_MAPPING = new LinkedHashMap<>();
+		DEFAULT_MAPPING = new LinkedHashMap<String, GC_FIELD>();
 		DEFAULT_MAPPING.put("Name", GC_FIELD.NAME);
 		DEFAULT_MAPPING.put("Number 1", GC_FIELD.PHONE_NUMBER);
 		DEFAULT_MAPPING.put("Number 2", GC_FIELD.PHONE_NUMBER);
@@ -105,7 +104,7 @@ public class Main {
 		options.addOption(Option.builder().optionalArg(true).longOpt("max-results")
 				.desc(String.format("The maximum number of contacts to fetch from Google Contacts (default is %d)",
 
-				DEFAULT_MAX_RESULTS)).hasArg().argName("max").type(Integer.class).build());
+						DEFAULT_MAX_RESULTS)).hasArg().argName("max").type(Integer.class).build());
 
 		options.addOption(Option.builder().longOpt("group-id").desc("The group id to filter the contacts with (requires email)").hasArg()
 				.argName("id").build());
@@ -148,7 +147,7 @@ public class Main {
 			printHelp(options);
 		}
 
-		if (commandLine!= null && commandLine.hasOption("h")) {
+		if (commandLine != null && commandLine.hasOption("h")) {
 			printHelp(options);
 			System.exit(0);
 		}
@@ -164,16 +163,26 @@ public class Main {
 		Main main = new Main(commandLine);
 		try {
 			main.execute();
-		} catch (GoogleConnectorException | CVSWriterException | IncomICW1000GConnectorException | GCCSVException e) {
-			if (commandLine.hasOption("v")) {
-				e.printStackTrace();
-			}
-			System.err.println(String.format("Finished unsucessfully. Cause: %s.%s", e.getMessage(), commandLine.hasOption("v") ? ""
-					: " Use -v for more details."));
-			System.exit(2);
+		} catch (GoogleConnectorException e) {
+			processException(commandLine, e);
+		} catch (CVSWriterException e) {
+			processException(commandLine, e);
+		} catch (IncomICW1000GConnectorException e) {
+			processException(commandLine, e);
+		} catch (GCCSVException e) {
+			processException(commandLine, e);
 		}
 		System.out.println("\n\nDone.");
 		System.exit(0);
+	}
+
+	private static void processException(CommandLine commandLine, Exception e) {
+		if (commandLine.hasOption("v")) {
+			e.printStackTrace();
+		}
+		System.err.println(String.format("Finished unsucessfully. Cause: %s.%s", e.getMessage(), commandLine.hasOption("v") ? ""
+				: " Use -v for more details."));
+		System.exit(2);
 	}
 
 	private void execute() throws GoogleConnectorException, CVSWriterException, IncomICW1000GConnectorException, GCCSVException {
@@ -196,7 +205,9 @@ public class Main {
 			try {
 				List<String> lines = Files.readAllLines(Paths.get(commandLine.getOptionValue("c")));
 				clientId = lines.get(0);
-			} catch (IOException | IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {
+				throw new GCCSVException("Invalid file for client id: " + commandLine.getOptionValue("c"), e);
+			} catch (IOException e) {
 				throw new GCCSVException("Invalid file for client id: " + commandLine.getOptionValue("c"), e);
 			}
 		}
@@ -205,7 +216,9 @@ public class Main {
 			try {
 				List<String> lines = Files.readAllLines(Paths.get(commandLine.getOptionValue("s")));
 				clientSecret = lines.get(0);
-			} catch (IOException | IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {
+				throw new GCCSVException("Invalid file for client secret: " + commandLine.getOptionValue("s"), e);
+			} catch (IOException e) {
 				throw new GCCSVException("Invalid file for client secret: " + commandLine.getOptionValue("s"), e);
 			}
 		}
